@@ -1,10 +1,27 @@
 use std::{error::Error, fmt::Display};
 
-use rss::Channel;
 use scraper::{Html, Selector};
+use serde::Deserialize;
 
 const _RSS_SEVERE: &str = "https://www.spc.noaa.gov/products/spcwwrss.xml";
 const RSS_ALL: &str = "https://www.spc.noaa.gov/products/spcrss.xml";
+
+#[derive(Debug, Deserialize)]
+struct Rss {
+    channel: Channel,
+}
+
+#[derive(Debug, Deserialize)]
+struct Channel {
+    item: Vec<Item>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Item {
+    link: String,
+    title: String,
+    description: String,
+}
 
 struct Warning {
     title: String,
@@ -19,21 +36,20 @@ impl Display for Warning {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let warnings = get_warnings(get_feed().await?).await?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let warnings = get_warnings(get_feed()?)?;
     for w in warnings {
         println!("{}", w);
     }
     Ok(())
 }
 
-async fn get_warnings(channel: Channel) -> Result<Vec<Warning>, Box<dyn Error>> {
+fn get_warnings(doc: Rss) -> Result<Vec<Warning>, Box<dyn Error>> {
     let mut warnings = Vec::new();
-    for item in channel.items() {
-        let title = item.title().unwrap_or("(no title)");
-        let desc = item.description().unwrap_or("(nothing)");
-        let dom = Html::parse_fragment(desc);
+    for item in doc.channel.item {
+        let title = item.title;
+        let desc = item.description;
+        let dom = Html::parse_fragment(&desc);
         let sel = Selector::parse("pre")?;
         let mut pre = dom.select(&sel);
 
@@ -48,8 +64,8 @@ async fn get_warnings(channel: Channel) -> Result<Vec<Warning>, Box<dyn Error>> 
     Ok(warnings)
 }
 
-async fn get_feed() -> Result<Channel, Box<dyn Error>> {
-    let content = reqwest::get(RSS_ALL).await?.bytes().await?;
-    let channel = Channel::read_from(&content[..])?;
-    Ok(channel)
+fn get_feed() -> Result<Rss, Box<dyn Error>> {
+    let content = reqwest::blocking::get(RSS_ALL)?.text()?;
+    let rss: Rss = quick_xml::de::from_str(content.as_str()).unwrap();
+    Ok(rss)
 }
