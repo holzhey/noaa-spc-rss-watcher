@@ -1,6 +1,5 @@
 use std::{error::Error, fmt::Display};
 
-use scraper::{Html, Selector};
 use serde::Deserialize;
 
 const _RSS_SEVERE: &str = "https://www.spc.noaa.gov/products/spcwwrss.xml";
@@ -48,17 +47,19 @@ fn get_warnings(doc: Rss) -> Result<Vec<Warning>, Box<dyn Error>> {
     let mut warnings = Vec::new();
     for item in doc.channel.item {
         let title = item.title;
-        let desc = item.description;
-        let dom = Html::parse_fragment(&desc);
-        let sel = Selector::parse("pre")?;
-        let mut pre = dom.select(&sel);
+        let mut desc = "(failed to parse description)";
 
-        if let Some(n) = pre.next() {
-            warnings.push(Warning {
-                title: title.to_string(),
-                content: n.text().next().unwrap().to_string(),
-            })
+        let start = item.description.find("<pre>").unwrap_or(0);
+        let finish = item.description.find("</pre>").unwrap_or(desc.len());
+        dbg!(start, finish);
+        if start != 0 && finish != desc.len() {
+            desc = &item.description[start..finish];
         }
+
+        warnings.push(Warning {
+            title: title.to_string(),
+            content: desc.to_string(),
+        })
     }
 
     Ok(warnings)
