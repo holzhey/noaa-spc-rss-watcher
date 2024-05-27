@@ -25,13 +25,18 @@ struct Item {
 struct Warning {
     title: String,
     content: String,
+    link: String,
 }
 
 impl Display for Warning {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut c = self.content.clone();
         c.truncate(150);
-        write!(f, "** {} **\n{}\n-------------", self.title, c)
+        write!(
+            f,
+            "** {} **\n{}\n{}\n-------------",
+            self.title, self.link, c
+        )
     }
 }
 
@@ -46,23 +51,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn get_warnings(doc: Rss) -> Result<Vec<Warning>, Box<dyn Error>> {
     let mut warnings = Vec::new();
     for item in doc.channel.item {
-        let title = item.title;
-        let mut desc = "(failed to parse description)";
+        warnings.push(get_warning(item));
+    }
+    Ok(warnings)
+}
 
-        let start = item.description.find("<pre>").unwrap_or(0);
-        let finish = item.description.find("</pre>").unwrap_or(desc.len());
-        dbg!(start, finish);
-        if start != 0 && finish != desc.len() {
-            desc = &item.description[start..finish];
-        }
+fn get_warning(item: Item) -> Warning {
+    let mut desc = "(failed to parse description)";
 
-        warnings.push(Warning {
-            title: title.to_string(),
-            content: desc.to_string(),
-        })
+    let start = item.description.find("<pre>").unwrap_or(0);
+    let finish = item.description.find("</pre>").unwrap_or(desc.len());
+    dbg!(start, finish);
+    if start != 0 && finish != desc.len() {
+        desc = &item.description[start..finish];
     }
 
-    Ok(warnings)
+    Warning {
+        title: item.title.to_string(),
+        content: desc.to_string(),
+        link: item.link,
+    }
 }
 
 fn get_feed() -> Result<Rss, Box<dyn Error>> {
