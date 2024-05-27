@@ -456,12 +456,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "noaa-spc-rss-watcher"
+name = "noaa-spc-rss-parser"
 version = "0.1.0"
+source = "git+https://github.com/holzhey/noaa-spc-rss-parser.git#9cc69a05d5328661b61899dfa7d5c0cc950ac39b"
 dependencies = [
  "quick-xml",
  "reqwest",
  "serde",
+]
+
+[[package]]
+name = "noaa-spc-rss-watcher"
+version = "0.1.0"
+dependencies = [
+ "noaa-spc-rss-parser",
 ]
 
 [[package]]
