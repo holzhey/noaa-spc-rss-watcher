@@ -1,4 +1,4 @@
-use std::{fmt::Display, io};
+use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use noaa_spc_rss_parser::get_warnings;
