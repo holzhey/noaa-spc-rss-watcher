@@ -1,11 +1,13 @@
 use std::error::Error;
 
-use noaa_spc_rss_parser::get_warnings;
+use app::App;
+
+mod app;
+mod tui;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let warnings = get_warnings()?;
-    for w in warnings {
-        println!("{}", w);
-    }
+    let mut terminal = tui::init()?;
+    App::default().run(&mut terminal)?;
+    tui::restore()?;
     Ok(())
 }
