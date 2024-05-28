@@ -1,4 +1,4 @@
-use std::io;
+use std::{fmt::Display, io};
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use noaa_spc_rss_parser::get_warnings;
@@ -79,6 +79,7 @@ impl Widget for &App {
 
         for w in warnings {
             text.push(Line::from(vec!["Warning: ".into(), w.title.yellow()]));
+            text.push(Line::from(vec![w.content.gray()]));
         }
 
         Paragraph::new(Text::from(text))
